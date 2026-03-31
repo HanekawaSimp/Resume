@@ -29,3 +29,7 @@ jobs:
       - name: Upload files to bucket
         run: |
           gsutil -m rsync -r . gs://www.sahilrao.online
+
+      - name: Invalidate CDN cache
+        run: |
+          gcloud compute backend-buckets invalidate-cdn-cache resume-backend --path "/*"
