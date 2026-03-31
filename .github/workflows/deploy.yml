@@ -32,4 +32,4 @@ jobs:
 
       - name: Invalidate CDN cache
         run: |
-          gcloud compute backend-buckets invalidate-cdn-cache resume-backend --path "/*"
+          gcloud compute url-maps invalidate-cdn-cache resume-load-balancer --path "/*"
