@@ -1,4 +1,4 @@
-name: Deploy to GCP
+name: Deploy Static Site to EC2
 
 on:
   push:
@@ -9,27 +9,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Upload files to bucket
+      - name: Configure SSH
         run: |
-          gsutil -m rsync -r . gs://www.sahilrao.online
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.EC2_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
-      - name: Invalidate CDN cache
+      - name: Rsync Files to EC2
         run: |
-          gcloud compute url-maps invalidate-cdn-cache resume-load-balancer --path "/*"
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            . \
+            deploy@${{ secrets.EC2_HOST }}:/var/www/site1/
